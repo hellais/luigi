@@ -19,6 +19,7 @@ The abstract :py:class:`Target` class.
 It is a central concept of Luigi and represents the state of the workflow.
 """
 
+import time
 import abc
 import io
 import os
@@ -237,3 +238,41 @@ class AtomicLocalFile(io.BufferedWriter):
         if exc_type:
             return
         return super(AtomicLocalFile, self).__exit__(exc_type, exc, traceback)
+
+class AtomicLocalFileAppend(io.BufferedWriter):
+    def __init__(self, path, timeout=10, delay=.05):
+        self.path = path
+        self.is_locked = False
+        self.timeout = timeout
+        self.delay = delay
+        self.lockfile = "%s.lock" % self.path
+        self.acquire()
+        super(AtomicLocalFile, self).__init__(io.FileIO(self.path, 'a'))
+
+    def __exit__(self, exc_type, traceback):
+        if exc_type:
+            return
+        self.release()
+        return super(AtomicLocalFile, self).__exit__(exc_type, exc, traceback)
+
+    def acquire(self):
+        start_time = time.time()
+        while True:
+            try:
+                self.fd = os.open(
+                    self.lockfile,
+                    os.O_CREAT | os.O_EXCL | os.O_RDWR)
+                break
+            except OSError as e:
+                if e.errno != errno.EEXIST:
+                    raise
+                if (time.time() - start_time) >= self.timeout:
+                    raise FileLockException("Timeout occured.")
+                time.sleep(self.delay)
+        self.is_locked = True
+
+    def release(self):
+        if self.is_locked:
+            os.close(self.fd)
+            os.unlink(self.lockfile)
+            self.is_locked = False
