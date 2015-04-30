@@ -793,6 +793,7 @@ PlainDir = PlainDirFormat()
 class CompatibleHdfsFormat(luigi.format.Format):
 
     output = 'hdfs'
+    append = False
 
     def __init__(self, writer, reader, input=None):
         if input is not None:
@@ -802,13 +803,13 @@ class CompatibleHdfsFormat(luigi.format.Format):
         self.writer = writer
 
     def pipe_writer(self, output):
-        return self.writer(output)
+        return self.writer(output, self.append)
 
     def pipe_reader(self, input):
         return self.reader(input)
 
     def hdfs_writer(self, output):
-        return self.writer(output)
+        return self.writer(output, self.append)
 
     def hdfs_reader(self, input):
         return self.reader(input)
@@ -898,7 +899,8 @@ class HdfsTarget(FileSystemTarget):
         if mode == 'r':
             return self.format.pipe_reader(self.path)
         elif mode == 'a':
-            return self.format.pipe_writer(self.path, True)
+            self.format.append = True
+            return self.format.pipe_writer(self.path)
         else:
             return self.format.pipe_writer(self.path)
 
