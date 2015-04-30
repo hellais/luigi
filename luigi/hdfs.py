@@ -705,12 +705,16 @@ class HdfsAtomicWritePipe(luigi.format.OutputPipeProcessWrapper):
     local temporary file and then uploads it on completion
     """
 
-    def __init__(self, path):
+    def __init__(self, path, append=False):
+        self.append = append
         self.path = path
         self.tmppath = tmppath(self.path)
         parent_dir = os.path.dirname(self.tmppath)
         mkdir(parent_dir, parents=True, raise_if_exists=False)
-        super(HdfsAtomicWritePipe, self).__init__(load_hadoop_cmd() + ['fs', '-put', '-', self.tmppath])
+        command = "-put"
+        if self.append:
+            command = "-appendToFile"
+        super(HdfsAtomicWritePipe, self).__init__(load_hadoop_cmd() + ['fs', command, '-', self.tmppath])
 
     def abort(self):
         logger.info("Aborting %s('%s'). Removing temporary file '%s'",
@@ -759,8 +763,8 @@ class PlainFormat(luigi.format.Format):
     def pipe_reader(self, path):
         return HdfsReadPipe(path)
 
-    def pipe_writer(self, output_pipe):
-        return HdfsAtomicWritePipe(output_pipe)
+    def pipe_writer(self, output_pipe, append=False):
+        return HdfsAtomicWritePipe(output_pipe, append)
 
 
 class PlainDirFormat(luigi.format.Format):
@@ -888,11 +892,13 @@ class HdfsTarget(FileSystemTarget):
         return False
 
     def open(self, mode='r'):
-        if mode not in ('r', 'w'):
+        if mode not in ('r', 'w', 'a'):
             raise ValueError("Unsupported open mode '%s'" % mode)
 
         if mode == 'r':
             return self.format.pipe_reader(self.path)
+        elif mode == 'a':
+            return self.format.pipe_writer(self.path, True)
         else:
             return self.format.pipe_writer(self.path)
 
