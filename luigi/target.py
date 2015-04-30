@@ -263,13 +263,10 @@ class AtomicLocalFileAppend(io.BufferedWriter):
         self.delay = delay
         self.lockfile = "%s.lock" % self.path
         self.acquire()
-        super(AtomicLocalFileAppend, self).__init__(io.FileIO(self.path, 'a+'))
+        super(AtomicLocalFileAppend, self).__init__(io.FileIO(self.path, 'a'))
 
     def close(self):
         super(AtomicLocalFileAppend, self).close()
-        self.release()
-
-    def __del__(self):
         self.release()
 
     def acquire(self):

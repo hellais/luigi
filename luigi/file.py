@@ -98,13 +98,13 @@ class LocalTarget(FileSystemTarget):
         if parentfolder and not os.path.exists(parentfolder):
             os.makedirs(parentfolder)
 
-    def open(self, mode='r'):
+    def open(self, mode='r', timeout=10):
         if mode == 'w':
             self.makedirs()
             return self.format.pipe_writer(atomic_file(self.path))
         elif mode == 'a':
             self.makedirs()
-            return self.format.pipe_writer(AtomicLocalFileAppend(self.path))
+            return self.format.pipe_writer(AtomicLocalFileAppend(self.path, timeout=timeout))
         elif mode == 'r':
             fileobj = FileWrapper(io.BufferedReader(io.FileIO(self.path, 'r')))
             return self.format.pipe_reader(fileobj)
