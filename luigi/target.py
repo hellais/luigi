@@ -266,9 +266,9 @@ class AtomicLocalFileAppend(io.BufferedWriter):
         super(AtomicLocalFileAppend, self).__init__(io.FileIO(self.path, 'a+'))
 
     def __exit__(self, exc_type, exc, traceback):
+        self.release()
         if exc_type:
             return
-        self.release()
         return super(AtomicLocalFileAppend, self).__exit__(exc_type, exc, traceback)
 
     def acquire(self):
