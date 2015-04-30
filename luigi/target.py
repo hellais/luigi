@@ -19,6 +19,7 @@ The abstract :py:class:`Target` class.
 It is a central concept of Luigi and represents the state of the workflow.
 """
 
+import errno
 import time
 import abc
 import io
@@ -29,6 +30,10 @@ import logging
 from luigi import six
 
 logger = logging.getLogger('luigi-interface')
+
+
+class FileLockException(Exception):
+    pass
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -260,11 +265,11 @@ class AtomicLocalFileAppend(io.BufferedWriter):
         self.acquire()
         super(AtomicLocalFile, self).__init__(io.FileIO(self.path, 'a'))
 
-    def __exit__(self, exc_type, traceback):
+    def __exit__(self, exc_type, exc, traceback):
         if exc_type:
             return
         self.release()
-        return super(AtomicLocalFile, self).__exit__(exc_type, exc, traceback)
+        return super(AtomicLocalFileAppend, self).__exit__(exc_type, exc, traceback)
 
     def acquire(self):
         start_time = time.time()
