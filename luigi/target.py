@@ -265,11 +265,12 @@ class AtomicLocalFileAppend(io.BufferedWriter):
         self.acquire()
         super(AtomicLocalFileAppend, self).__init__(io.FileIO(self.path, 'a+'))
 
-    def __exit__(self, exc_type, exc, traceback):
+    def close(self):
+        super(AtomicLocalFileAppend, self).close()
         self.release()
-        if exc_type:
-            return
-        return super(AtomicLocalFileAppend, self).__exit__(exc_type, exc, traceback)
+
+    def __del__(self):
+        self.release()
 
     def acquire(self):
         start_time = time.time()
