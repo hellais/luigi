@@ -706,13 +706,12 @@ class HdfsAtomicWritePipe(luigi.format.OutputPipeProcessWrapper):
     """
 
     def __init__(self, path, append=False):
-        self.append = append
         self.path = path
         self.tmppath = tmppath(self.path)
         parent_dir = os.path.dirname(self.tmppath)
         mkdir(parent_dir, parents=True, raise_if_exists=False)
         command = "-put"
-        if self.append:
+        if append:
             command = "-appendToFile"
         print "RUNNING %s" % command
         super(HdfsAtomicWritePipe, self).__init__(load_hadoop_cmd() + ['fs', command, '-', self.tmppath])
@@ -903,6 +902,7 @@ class HdfsTarget(FileSystemTarget):
             return self.format.pipe_reader(self.path)
         elif mode == 'a':
             self.format.append = True
+            self.format.writer.append = True
             return self.format.pipe_writer(self.path)
         else:
             return self.format.pipe_writer(self.path)
