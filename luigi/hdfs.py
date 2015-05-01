@@ -753,7 +753,6 @@ class PlainFormat(luigi.format.Format):
 
     input = 'bytes'
     output = 'hdfs'
-    append = False
 
     def hdfs_writer(self, path):
         return self.pipe_writer(path)
@@ -764,15 +763,14 @@ class PlainFormat(luigi.format.Format):
     def pipe_reader(self, path):
         return HdfsReadPipe(path)
 
-    def pipe_writer(self, output_pipe):
-        return HdfsAtomicWritePipe(output_pipe, self.append)
+    def pipe_writer(self, output_pipe, append=False):
+        return HdfsAtomicWritePipe(output_pipe, append)
 
 
 class PlainDirFormat(luigi.format.Format):
 
     input = 'bytes'
     output = 'hdfs'
-    append = False
 
     def hdfs_writer(self, path):
         return self.pipe_writer(path)
@@ -795,7 +793,6 @@ PlainDir = PlainDirFormat()
 class CompatibleHdfsFormat(luigi.format.Format):
 
     output = 'hdfs'
-    append = False
 
     def __init__(self, writer, reader, input=None):
         if input is not None:
@@ -804,7 +801,9 @@ class CompatibleHdfsFormat(luigi.format.Format):
         self.reader = reader
         self.writer = writer
 
-    def pipe_writer(self, output):
+    def pipe_writer(self, output, append=False):
+        if append:
+            return self.writer(output, append)
         return self.writer(output)
 
     def pipe_reader(self, input):
@@ -901,9 +900,7 @@ class HdfsTarget(FileSystemTarget):
         if mode == 'r':
             return self.format.pipe_reader(self.path)
         elif mode == 'a':
-            self.format.append = True
-            self.format.writer.append = True
-            return self.format.pipe_writer(self.path)
+            return self.format.pipe_writer(self.path, True)
         else:
             return self.format.pipe_writer(self.path)
 
