@@ -713,7 +713,6 @@ class HdfsAtomicWritePipe(luigi.format.OutputPipeProcessWrapper):
         command = "-put"
         if append:
             command = "-appendToFile"
-        print "RUNNING %s" % command
         super(HdfsAtomicWritePipe, self).__init__(load_hadoop_cmd() + ['fs', command, '-', self.tmppath])
 
     def abort(self):
