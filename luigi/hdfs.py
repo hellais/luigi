@@ -805,7 +805,7 @@ class CompatibleHdfsFormat(luigi.format.Format):
         return self.writer(output)
 
     def pipe_appender(self, output):
-        return HdfsAtomicWritePipe(output)
+        return HdfsAtomicWritePipe(output, True)
 
     def pipe_reader(self, input):
         return self.reader(input)
